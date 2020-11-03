@@ -12,7 +12,7 @@ import top.misec.config.Config;
 import top.misec.login.ServerVerify;
 import top.misec.login.Verify;
 import top.misec.pojo.userinfobean.Data;
-import top.misec.utils.HttpUnit;
+import top.misec.utils.HttpUtil;
 
 import java.util.*;
 
@@ -31,7 +31,7 @@ public class DailyTask {
      */
     public void dailyAvShare(String aid) {
         String requestBody = "aid=" + aid + "&csrf=" + Verify.getInstance().getBiliJct();
-        JsonObject result = HttpUnit.doPost((ApiList.AvShare), requestBody);
+        JsonObject result = HttpUtil.doPost((ApiList.AvShare), requestBody);
 
         if (result.get(statusCodeStr).getAsInt() == 0) {
             logger.info("视频: av" + aid + "分享成功");
@@ -47,7 +47,7 @@ public class DailyTask {
     public void doMangaSign() {
         String platform = Config.getInstance().getDevicePlatform();
         String requestBody = "platform=" + platform;
-        JsonObject result = HttpUnit.doPost(ApiList.Manga, requestBody);
+        JsonObject result = HttpUtil.doPost(ApiList.Manga, requestBody);
 
         if (result == null) {
             logger.info("哔哩哔哩漫画已经签到过了");
@@ -73,7 +73,7 @@ public class DailyTask {
 
         //判断曾经是否对此av投币过
         if (!isCoin(aid)) {
-            JsonObject jsonObject = HttpUnit.doPost(ApiList.CoinAdd, requestBody);
+            JsonObject jsonObject = HttpUtil.doPost(ApiList.CoinAdd, requestBody);
             if (jsonObject.get(statusCodeStr).getAsInt() == 0) {
                 logger.info("为Av" + aid + "投币成功");
                 wechatLogger.info("为Av" + aid + "投币成功");
@@ -96,7 +96,7 @@ public class DailyTask {
      */
     public boolean isCoin(String aid) {
         String urlParam = "?aid=" + aid;
-        JsonObject result = HttpUnit.doGet(ApiList.isCoin + urlParam);
+        JsonObject result = HttpUtil.doGet(ApiList.isCoin + urlParam);
 
         int multiply = result.getAsJsonObject("data").get("multiply").getAsInt();
         if (multiply > 0) {
@@ -117,7 +117,7 @@ public class DailyTask {
         Map<String, Boolean> videoMap = new HashMap(12);
 
         String urlParam = "?rid=" + rid + "&day=" + day;
-        JsonObject resultJson = HttpUnit.doGet(ApiList.getRegionRanking + urlParam);
+        JsonObject resultJson = HttpUtil.doGet(ApiList.getRegionRanking + urlParam);
 
         logger.info("获取分区: " + rid + "的" + day + "日top10榜单成功");
 
@@ -169,7 +169,7 @@ public class DailyTask {
      * @return 本日已经投了几个币
      */
     public int expConfirm() {
-        JsonObject resultJson = HttpUnit.doGet(ApiList.needCoin);
+        JsonObject resultJson = HttpUtil.doGet(ApiList.needCoin);
         int getCoinExp = resultJson.get("number").getAsInt();
         logger.info("今日已获得投币经验: " + getCoinExp);
         return getCoinExp / 10;
@@ -243,7 +243,7 @@ public class DailyTask {
     }
 
     public void silver2coin() {
-        JsonObject resultJson = HttpUnit.doGet(ApiList.silver2coin);
+        JsonObject resultJson = HttpUtil.doGet(ApiList.silver2coin);
         int responseCode = resultJson.get("code").getAsInt();
         if (responseCode == 0) {
             logger.info("银瓜子兑换硬币成功");
@@ -253,7 +253,7 @@ public class DailyTask {
             wechatLogger.info("银瓜子兑换硬币失败 原因是: " + resultJson.get("msg").getAsString());
         }
 
-        JsonObject queryStatus = HttpUnit.doGet(ApiList.getSilver2coinStatus).get("data").getAsJsonObject();
+        JsonObject queryStatus = HttpUtil.doGet(ApiList.getSilver2coinStatus).get("data").getAsJsonObject();
         double silver2coinMoney = OftenAPI.getCoinBalance();
         logger.info("当前银瓜子余额: " + queryStatus.get("silver").getAsInt());
         wechatLogger.info("当前银瓜子余额: " + queryStatus.get("silver").getAsInt());
@@ -272,7 +272,7 @@ public class DailyTask {
      * @author @srcrs
      */
     public JsonObject getDailyTaskStatus() {
-        JsonObject jsonObject = HttpUnit.doGet(ApiList.reward);
+        JsonObject jsonObject = HttpUtil.doGet(ApiList.reward);
         int responseCode = jsonObject.get(statusCodeStr).getAsInt();
         if (responseCode == 0) {
             logger.info("请求本日任务完成状态成功");
@@ -280,7 +280,7 @@ public class DailyTask {
             return jsonObject.get("data").getAsJsonObject();
         } else {
             logger.debug(jsonObject.get("message").getAsString());
-            return HttpUnit.doGet(ApiList.reward).get("data").getAsJsonObject();
+            return HttpUtil.doGet(ApiList.reward).get("data").getAsJsonObject();
             //偶发性请求失败，再请求一次。
         }
     }
@@ -292,7 +292,7 @@ public class DailyTask {
             int playedTime = new Random().nextInt(90) + 1;
             String postBody = "aid=" + aid
                     + "&played_time=" + playedTime;
-            JsonObject resultJson = HttpUnit.doPost(ApiList.videoHeartbeat, postBody);
+            JsonObject resultJson = HttpUtil.doPost(ApiList.videoHeartbeat, postBody);
             int responseCode = resultJson.get("code").getAsInt();
             if (responseCode == 0) {
                 logger.info("av" + aid + "播放成功,已观看到第" + playedTime + "秒");
@@ -330,7 +330,7 @@ public class DailyTask {
     }
 
     /**
-     * 月底自动给自己充电。//仅充会到期的B币券，低于2的时候不会充
+     * 月底自动给自己充电。仅充会到期的B币券，低于2的时候不会充
      */
     public void doCharge() {
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
@@ -366,7 +366,7 @@ public class DailyTask {
                     + "&oid=" + userId
                     + "&csrf=" + Verify.getInstance().getBiliJct();
 
-            JsonObject jsonObject = HttpUnit.doPost(ApiList.autoCharge, requestBody);
+            JsonObject jsonObject = HttpUtil.doPost(ApiList.autoCharge, requestBody);
 
             int resultCode = jsonObject.get("code").getAsInt();
             if (resultCode == 0) {
@@ -397,7 +397,7 @@ public class DailyTask {
         String requestBody = "order_id=" + token
                 + "&message=" + "BILIBILI-HELPER自动充电"
                 + "&csrf=" + Verify.getInstance().getBiliJct();
-        JsonObject jsonObject = HttpUnit.doPost(ApiList.chargeComment, requestBody);
+        JsonObject jsonObject = HttpUtil.doPost(ApiList.chargeComment, requestBody);
 
         if (jsonObject.get(statusCodeStr).getAsInt() == 0) {
             logger.info("充电留言成功");
@@ -430,7 +430,7 @@ public class DailyTask {
 
         String requestBody = "{\"reason_id\":" + reason_id + "}";
         //注意参数构造格式为json，不知道需不需要重载下面的Post函数改请求头
-        JsonObject jsonObject = HttpUnit.doPost(ApiList.mangaGetVipReward, requestBody);
+        JsonObject jsonObject = HttpUtil.doPost(ApiList.mangaGetVipReward, requestBody);
         if (jsonObject.get(statusCodeStr).getAsInt() == 0) {
             //@happy888888:好像也可以getAsString或,getAsShort
             //@JunzhouLiu:Int比较好判断
@@ -445,7 +445,7 @@ public class DailyTask {
      */
     public void doLiveCheckin() {
         logger.info("开始直播签到");
-        JsonObject liveCheckinResponse = HttpUnit.doGet(ApiList.liveCheckin);
+        JsonObject liveCheckinResponse = HttpUtil.doGet(ApiList.liveCheckin);
         int code = liveCheckinResponse.get(statusCodeStr).getAsInt();
         if (code == 0) {
             JsonObject data = liveCheckinResponse.get("data").getAsJsonObject();
@@ -453,14 +453,14 @@ public class DailyTask {
             wechatLogger.info("直播签到成功，本次签到获得" + data.get("text").getAsString() + "," + data.get("specialText").getAsString());
         } else {
             String message = liveCheckinResponse.get("message").getAsString();
-            wechatLogger.info(message);
-            logger.debug(message);
+            wechatLogger.info("直播签到失败: " + message);
+            logger.debug("直播签到失败: " + message);
         }
     }
 
 
     public void doServerPush() {
-        if (ServerVerify.getMsgPushKey() != null) {
+        if (ServerVerify.getFTKEY() != null) {
             ServerPush serverPush = new ServerPush();
             serverPush.pushMsg("BILIBILIHELPER任务简报", wechatLogger.getLoggerInfo());
         } else {
@@ -471,7 +471,7 @@ public class DailyTask {
 
     public void doDailyTask() {
 
-        JsonObject userJson = HttpUnit.doGet(ApiList.LOGIN);
+        JsonObject userJson = HttpUtil.doGet(ApiList.LOGIN);
         //判断Cookies是否有效
         if (userJson.get(statusCodeStr).getAsInt() == 0
                 && userJson.get("data").getAsJsonObject().get("isLogin").getAsBoolean()) {
@@ -487,7 +487,9 @@ public class DailyTask {
         //用户名模糊处理 @happy88888
         int s1 = uname.length() / 2, s2 = (s1 + 1) / 2;
         logger.info("用户名称: " + uname.substring(0, s2) + String.join("", Collections.nCopies(s1, "*")) + uname.substring(s1 + s2));
+        wechatLogger.info("用户名称: " + userInfo.getUname());
         logger.info("硬币余额: " + userInfo.getMoney());
+        wechatLogger.info("硬币余额: " + userInfo.getMoney());
         if (userInfo.getLevel_info().getCurrent_level() < 6) {
             logger.info("距离升级到Lv" + (userInfo.getLevel_info().getCurrent_level() + 1) + "还有: " +
                     (userInfo.getLevel_info().getNext_exp_asInt() - userInfo.getLevel_info().getCurrent_exp()) / 65 + "天");
@@ -496,6 +498,7 @@ public class DailyTask {
         }
 
         Config.getInstance().configInit();
+        wechatLogger.info(Config.getInstance().outputConfig());
         videoWatch();//观看视频 默认会调用分享
         doMangaSign();//漫画签到
         silver2coin();//银瓜子换硬币
@@ -504,6 +507,7 @@ public class DailyTask {
         doCharge();
         mangaGetVipReward(1);
         logger.info("本日任务已全部执行完毕");
+        wechatLogger.info("欢迎大家通过用户群反馈问题" + "![image.png](https://i.loli.net/2020/11/02/wiCY4JhANstkcmF.png)");
         doServerPush();
     }
 }
